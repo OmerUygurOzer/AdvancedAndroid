@@ -1,21 +1,43 @@
 package com.ceomer.tutorial.base;
 
+import android.arch.lifecycle.Lifecycle;
+import android.arch.lifecycle.LifecycleOwner;
+import android.arch.lifecycle.LifecycleRegistry;
+import android.support.annotation.NonNull;
+
 import java.lang.ref.WeakReference;
 import java.util.Optional;
 
-public abstract class BasePresenter<T> {
+public abstract class BasePresenter<T> implements LifecycleOwner{
 
     private Optional<WeakReference<T>> viewReference;
+    private LifecycleRegistry lifecycleRegistry;
 
-    public void setView(Object view) {
-        viewReference = Optional.of(new WeakReference<>((T) view));
+    protected BasePresenter(){
+        lifecycleRegistry = new LifecycleRegistry(this);
+        lifecycleRegistry.markState(Lifecycle.State.CREATED);
+    }
+
+    public void setView(Object view){
+        this.lifecycleRegistry.markState(Lifecycle.State.STARTED);
+        this.viewReference = Optional.of(new WeakReference<T>((T)view));
     }
 
     public void clearView(){
-        viewReference = Optional.empty();
+        this.viewReference = Optional.empty();
     }
 
-    protected Optional<WeakReference<T>> getView() {
+    public void destroy(){
+        this.lifecycleRegistry.markState(Lifecycle.State.DESTROYED);
+    }
+
+    protected Optional<WeakReference<T>> getView(){
         return viewReference;
+    }
+
+    @NonNull
+    @Override
+    public Lifecycle getLifecycle() {
+        return lifecycleRegistry;
     }
 }
